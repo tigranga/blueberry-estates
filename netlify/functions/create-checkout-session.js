@@ -2,7 +2,9 @@ import { readJSON } from "./store.js";
 
 export default async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const stripeSecret = process.env.STRIPE_SECRET_KEY;
+  const stripeSecret = typeof Netlify !== "undefined" && Netlify.env
+    ? Netlify.env.get("STRIPE_SECRET_KEY")
+    : process.env.STRIPE_SECRET_KEY;
   if (!stripeSecret) return new Response("Stripe secret key not configured", { status: 500 });
 
   let body;

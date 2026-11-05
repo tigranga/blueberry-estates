@@ -1,4 +1,11 @@
-import { json, readJSON, writeJSON } from "./store.js";
+import { database, hostAuth, json, readJSON, writeJSON } from "./store.js";
+
+function blockedFromCalendar(calendar) {
+  const days = calendar && calendar.days && typeof calendar.days === "object" ? calendar.days : {};
+  return Object.entries(days)
+    .filter(([date, value]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && value && value.blocked)
+    .map(([date]) => date);
+}
 
 export default async (req) => {
   if (req.method === "GET") {
@@ -7,19 +14,29 @@ export default async (req) => {
       const calendar = await readJSON("calendar", null);
       return json({ connected: true, listings, calendar });
     } catch (err) {
-      return json({ connected: false, error: String(err), listings: null, calendar: null }, 500);
+      return json({ connected: false, error: String(err && err.message ? err.message : err), listings: null, calendar: null }, 500);
     }
   }
 
   if (req.method === "PUT") {
-    const token = process.env.ADMIN_TOKEN;
-    if (!token) return json({ error: "Set the ADMIN_TOKEN environment variable on Netlify, then enter that same host key here." }, 503);
-    const auth = req.headers.get("Authorization") || "";
-    if (auth !== `Bearer ${token}`) return json({ error: "Host key does not match ADMIN_TOKEN." }, 401);
+    const auth = hostAuth(req);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
     let body;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-    if (Array.isArray(body.listings)) await writeJSON("listings", body.listings);
-    if (body.calendar && typeof body.calendar === "object") await writeJSON("calendar", body.calendar);
+    try {
+      if (Array.isArray(body.listings)) await writeJSON("listings", body.listings);
+      if (body.calendar && typeof body.calendar === "object") {
+        await writeJSON("calendar", body.calendar);
+        const db = database();
+        const dates = blockedFromCalendar(body.calendar);
+        await db.sql`DELETE FROM blocked_dates`;
+        for (const date of dates) {
+          await db.sql`INSERT INTO blocked_dates (date) VALUES (${date}) ON CONFLICT (date) DO NOTHING`;
+        }
+      }
+    } catch (err) {
+      return json({ error: String(err && err.message ? err.message : err) }, 500);
+    }
     return json({ ok: true });
   }
 
