@@ -152,23 +152,41 @@
       });
     });
 
-    function loadBookings() {
-      const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    let remoteBookings = [];
+
+    function stayName(b) { return b.guest_name || b.name || ''; }
+    function stayEmail(b) { return b.guest_email || b.email || ''; }
+
+    async function loadBookings() {
       const container = document.getElementById('bookings-list');
+      const token = adminToken();
+      try {
+        const res = await fetch('/api/bookings', {
+          headers: token ? { Authorization: 'Bearer ' + token } : {}
+        });
+        const data = await res.json().catch(() => []);
+        if (res.ok && Array.isArray(data)) remoteBookings = data;
+        else if (data && data.error && document.getElementById('sync-status')) {
+          document.getElementById('sync-status').textContent = data.error;
+        }
+      } catch (err) {
+        remoteBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+      }
+      const bookings = remoteBookings.filter(b => b.id != null || b.guest_name || b.name);
       if (bookings.length === 0) {
-        container.innerHTML = '<p>No booking requests yet.</p>';
+        container.innerHTML = '<p>No booking requests yet. Paid stays appear here after Stripe confirms them.</p>';
         return;
       }
       let html = '<table><tr><th>ID</th><th>Guest</th><th>Dates</th><th>Guests</th><th>Status</th><th>Actions</th></tr>';
-      bookings.slice().reverse().forEach(b => {
+      bookings.forEach(b => {
         html += `<tr>
           <td>${b.id}</td>
-          <td>${b.name}<br><small>${b.email}</small></td>
+          <td>${stayName(b)}<br><small>${stayEmail(b)}</small></td>
           <td>${b.checkin} → ${b.checkout}</td>
           <td>${b.guests}</td>
           <td class="status-${b.status}">${b.status}</td>
           <td>
-            ${b.status === 'pending' ? `<button class="action" onclick="confirmBooking(${b.id})">Confirm</button>` : ''}
+            ${b.status === 'pending' || b.status === 'paid' ? `<button class="action" onclick="confirmBooking(${b.id})">Confirm</button>` : ''}
             <button onclick="deleteBooking(${b.id})" class="action-secondary">Delete</button>
           </td>
         </tr>`;
@@ -177,19 +195,32 @@
       container.innerHTML = html;
     }
 
-    function confirmBooking(id) {
-      let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-      const b = bookings.find(x => x.id === id);
-      if (b) b.status = 'confirmed';
-      localStorage.setItem('bookings', JSON.stringify(bookings));
+    async function confirmBooking(id) {
+      const res = await fetch('/api/bookings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken() },
+        body: JSON.stringify({ id, status: 'confirmed' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || 'Could not confirm this booking.');
+        return;
+      }
       loadBookings();
     }
 
-    function deleteBooking(id) {
+    async function deleteBooking(id) {
       if (!confirm('Delete this booking?')) return;
-      let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-      bookings = bookings.filter(x => x.id !== id);
-      localStorage.setItem('bookings', JSON.stringify(bookings));
+      const res = await fetch('/api/bookings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken() },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || 'Could not delete this booking.');
+        return;
+      }
       loadBookings();
     }
 
@@ -249,7 +280,6 @@
       publishAll(false);
     }
 
-    loadBookings();
     loadListings();
 
     // ---- Host calendar (Airbnb-style) ----
@@ -298,8 +328,8 @@
       }
       return out;
     }
-    function bookingsFor(listingId) {
-      return JSON.parse(localStorage.getItem('bookings') || '[]').filter(b => b.status !== 'cancelled');
+    function bookingsFor() {
+      return remoteBookings.filter(b => b.status !== 'cancelled');
     }
     function bookingOn(dateStr) {
       return bookingsFor().find(b => b.checkin && b.checkout && dateStr >= b.checkin && dateStr < b.checkout);
@@ -485,7 +515,7 @@
       const status = document.getElementById('sync-status');
       const token = adminToken();
       if (!token) {
-        if (manual && status) status.textContent = 'Enter the host key first. It must match ADMIN_TOKEN in Cloudflare.';
+        if (manual && status) status.textContent = 'Enter the host key first. It must match the ADMIN_TOKEN environment variable on Netlify.';
         return;
       }
       if (status && manual) status.textContent = 'Publishing…';
@@ -511,7 +541,7 @@
         const res = await fetch('/api/content');
         const data = await res.json();
         if (!data.connected) {
-          if (status) status.textContent = data.error || 'Database is not connected yet. Bind a D1 database as DB, set ADMIN_TOKEN, then publish.';
+          if (status) status.textContent = data.error || 'Database is not connected yet. Publish this deploy, set ADMIN_TOKEN on Netlify, then try again.';
           return;
         }
         if (Array.isArray(data.listings) && data.listings.length) {
