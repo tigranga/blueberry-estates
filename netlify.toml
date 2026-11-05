@@ -1,3 +1,4 @@
+# Rebuild to load the current ADMIN_TOKEN.
 [build]
   command = "npm run build"
   publish = "."
