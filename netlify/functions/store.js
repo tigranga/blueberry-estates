@@ -25,13 +25,17 @@ export async function writeJSON(key, value) {
   `;
 }
 
-export function hostAuth(req) {
+export function hostAuth(req, body) {
   const token = typeof Netlify !== "undefined" && Netlify.env ? Netlify.env.get("ADMIN_TOKEN") : process.env.ADMIN_TOKEN;
   if (!token) {
     return { ok: false, status: 503, error: "Set the ADMIN_TOKEN environment variable on Netlify, then enter that same host key here." };
   }
-  const auth = req.headers.get("Authorization") || "";
-  if (auth !== `Bearer ${token}`) {
+  const expected = String(token).trim();
+  const header = req.headers.get("Authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  let provided = match ? match[1].trim() : "";
+  if (!provided && body && typeof body.hostKey === "string") provided = body.hostKey.trim();
+  if (!provided || provided !== expected) {
     return { ok: false, status: 401, error: "Host key does not match ADMIN_TOKEN." };
   }
   return { ok: true };

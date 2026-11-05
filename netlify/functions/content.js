@@ -19,10 +19,11 @@ export default async (req) => {
   }
 
   if (req.method === "PUT") {
-    const auth = hostAuth(req);
-    if (!auth.ok) return json({ error: auth.error }, auth.status);
     let body;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const auth = hostAuth(req, body);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
+    if (body && Object.prototype.hasOwnProperty.call(body, "hostKey")) delete body.hostKey;
     try {
       if (Array.isArray(body.listings)) await writeJSON("listings", body.listings);
       if (body.calendar && typeof body.calendar === "object") {

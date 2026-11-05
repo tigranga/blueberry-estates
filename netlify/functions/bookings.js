@@ -47,11 +47,10 @@ export default async (req) => {
       return json(rows.map(hostStay));
     }
 
-    const auth = hostAuth(req);
-    if (!auth.ok) return json({ error: auth.error }, auth.status);
-
     let body;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const auth = hostAuth(req, body);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
     const id = Number(body.id);
     if (!id) return json({ error: "Booking id required" }, 400);
 

@@ -162,7 +162,7 @@
       const token = adminToken();
       try {
         const res = await fetch('/api/bookings', {
-          headers: token ? { Authorization: 'Bearer ' + token } : {}
+          headers: token ? publishHeaders(token) : {}
         });
         const data = await res.json().catch(() => []);
         if (res.ok && Array.isArray(data)) remoteBookings = data;
@@ -198,8 +198,8 @@
     async function confirmBooking(id) {
       const res = await fetch('/api/bookings', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken() },
-        body: JSON.stringify({ id, status: 'confirmed' })
+        headers: publishHeaders(adminToken()),
+        body: JSON.stringify({ id, status: 'confirmed', hostKey: adminToken() })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -213,8 +213,8 @@
       if (!confirm('Delete this booking?')) return;
       const res = await fetch('/api/bookings', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken() },
-        body: JSON.stringify({ id })
+        headers: publishHeaders(adminToken()),
+        body: JSON.stringify({ id, hostKey: adminToken() })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -237,7 +237,31 @@
           guests: 6,
           bedrooms: 2,
           desc: 'Mid-century riverfront home on the Stillaguamish with hot tub, fire pit, and full acre of land.',
-          photo: 'photos/01.jpg'
+          photo: 'photos/22.jpg',
+          photos: [
+            'photos/22.jpg',
+            'photos/01.jpg',
+            'photos/02.jpg',
+            'photos/12.jpg',
+            'photos/14.jpg',
+            'photos/16.jpg',
+            'photos/13.jpg',
+            'photos/03.jpg',
+            'photos/04.jpg',
+            'photos/05.jpg',
+            'photos/06.jpg',
+            'photos/11.jpg',
+            'photos/09.jpg',
+            'photos/10.jpg',
+            'photos/15.jpg',
+            'photos/08.jpg',
+            'photos/07.jpg',
+            'photos/17.jpg',
+            'photos/18.jpg',
+            'photos/19.jpg',
+            'photos/20.jpg',
+            'photos/21.jpg'
+          ]
         }];
         localStorage.setItem('listings', JSON.stringify(listings));
       }
@@ -508,7 +532,21 @@
     document.getElementById('cal-today').onclick = () => { const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); };
 
     function adminToken() {
-      return (localStorage.getItem('adminToken') || '').trim();
+      return (localStorage.getItem('adminToken') || '').replace(/^\s+|\s+$/g, '');
+    }
+
+    function storedJson(key, fallback) {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      try { return JSON.parse(raw); }
+      catch { throw new Error('Saved ' + key + ' on this browser could not be read. Reload the dashboard and try again.'); }
+    }
+
+    function publishHeaders(token) {
+      const headers = { 'Content-Type': 'application/json' };
+      // Browsers reject an Authorization header that is not Latin-1, which used to fail before the request was sent.
+      if ([...token].every((ch) => ch.charCodeAt(0) <= 255)) headers.Authorization = 'Bearer ' + token;
+      return headers;
     }
 
     async function publishAll(manual) {
@@ -520,18 +558,21 @@
       }
       if (status && manual) status.textContent = 'Publishing…';
       try {
+        const listings = storedJson('listings', []);
+        const calendar = storedJson('hostCalendar', null);
         const res = await fetch('/api/content', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          headers: publishHeaders(token),
           body: JSON.stringify({
-            listings: JSON.parse(localStorage.getItem('listings') || '[]'),
-            calendar: JSON.parse(localStorage.getItem('hostCalendar') || 'null')
+            hostKey: token,
+            listings: Array.isArray(listings) ? listings : [],
+            calendar
           })
         });
         const data = await res.json().catch(() => ({}));
         if (status) status.textContent = res.ok ? 'Published. Guests now see this data.' : (data.error || 'Could not publish');
       } catch (err) {
-        if (status) status.textContent = 'Could not reach the site.';
+        if (status) status.textContent = (err && err.message) ? err.message : 'Could not reach the site.';
       }
     }
 
