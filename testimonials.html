@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testimonials | River Lodge by Blueberry Estates</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body.testimonials { height: 100vh; overflow: hidden; }
+    .stage {
+      position: relative;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+    .scrim {
+      position: absolute;
+      inset: 0;
+      background: rgba(244, 239, 232, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 20;
+    }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+    .bubble {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      padding: 16px;
+      box-sizing: border-box;
+      background: #fffdfb;
+      border: 1px solid #e6dfd6;
+      border-radius: 18px;
+      box-shadow: 0 14px 30px rgba(95, 110, 130, 0.12);
+      overflow: hidden;
+      cursor: pointer;
+      opacity: 0;
+      z-index: 1;
+      transition: opacity 4.8s ease, width 0.45s ease, height 0.45s ease, transform 0.45s ease, border-radius 0.45s ease;
+    }
+    .bubble.in { opacity: 1; }
+    .bubble.out { opacity: 0; transition: opacity 2.4s ease; }
+    .bubble.glide,
+    .bubble.open {
+      transition: opacity 4.8s ease, left 0.45s ease, top 0.45s ease, width 0.45s ease, height 0.45s ease, transform 0.45s ease, border-radius 0.45s ease;
+    }
+    .bubble.open {
+      width: min(560px, calc(100% - 48px));
+      height: min(440px, 72vh);
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%);
+      border-radius: 22px;
+      z-index: 30;
+      opacity: 1;
+      cursor: default;
+      overflow: auto;
+    }
+    .bubble .who { font-weight: 650; font-size: 0.95rem; }
+    .bubble .meta { color: #7d8796; font-size: 0.75rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bubble .stars { color: #c9a06a; letter-spacing: 1px; font-size: 0.8rem; margin: 6px 0; }
+    .bubble .text {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .bubble.open .meta { white-space: normal; }
+    .bubble.open .text { display: block; -webkit-line-clamp: unset; overflow: visible; }
+    .bubble .host { display: none; margin-top: 14px; padding: 12px 14px; background: #f6f1ea; border-radius: 12px; font-size: 0.9rem; line-height: 1.45; }
+    .bubble.open .host { display: block; }
+    .bubble .host strong { display: block; margin-bottom: 4px; }
+    @media (max-width: 700px) {
+      .bubble { width: 168px; height: 168px; padding: 12px; }
+      .bubble .text { -webkit-line-clamp: 4; font-size: 0.82rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bubble { transition: none; }
+    }
+  </style>
+</head>
+<body class="testimonials">
+  <header class="header">
+    <div class="logo">
+      <img src="logo.png" alt="River Lodge by Blueberry Estates" style="height:58px; width:auto; vertical-align:middle; margin-right:8px;">
+      <span>River Lodge by Blueberry Estates</span>
+    </div>
+    <nav>
+      <a href="index.html">Listing</a>
+      <a href="testimonials.html">Testimonials</a>
+      <a href="index.html#book">Book Now</a>
+      <a href="admin.html">Host Dashboard</a>
+    </nav>
+  </header>
+  <main class="stage" id="stage">
+    <div class="scrim" id="scrim"></div>
+  </main>
+  <script>
+    const REVIEWS = [{"name": "Aman", "meta": "Vancouver, Canada · September 2026 · Stayed with kids", "text": "Great location by the river. Well equipped property. Responsive host.", "host": "", "hostText": ""}, {"name": "Brittney", "meta": "Harrisburg, Pennsylvania · 3 weeks ago · Stayed a few nights", "text": "The House and Property was Absolutely Beautiful Inside & Out! Such a special place to visit & exactly what my heart & soul needed this trip! We will absolutely be coming back 💯", "host": "Response from Blueberry Estates · 2 weeks ago", "hostText": "Dear Brittney, thank you so much for your kind words. You are always welcome back!"}, {"name": "Justin And Carolina", "meta": "Seattle, Washington · September 2026 · Stayed with a pet", "text": "An amazing stay!!! This was a great location to celebrate my birthday with my family and friends. We loved our stay. Thank you very much!", "host": "", "hostText": ""}, {"name": "Amanda", "meta": "August 2026 · Stayed a few nights", "text": "Such a great stay! My husband and I celebrated our wedding close by and used this Airbnb to stay before and after our wedding. I even got ready for my wedding here, it’s such a beautiful property.", "host": "Response from Blueberry Estates · September 2026", "hostText": "Thank you for choosing our Riverfront Beauty to celebrate your special day. 💗"}, {"name": "Mantavya", "meta": "Richland, Washington · September 2026 · Stayed a few nights", "text": "Amazing views and the host was very responsive. Will definitely return!", "host": "Response from Blueberry Estates · September 2026", "hostText": "Thanks!"}, {"name": "Roger", "meta": "Austin, Texas · September 2026 · Stayed with a pet", "text": "Great place. So beautiful.", "host": "", "hostText": ""}, {"name": "Melodina", "meta": "Santa Barbara, California · August 2026 · Stayed about a week", "text": "The location nestled an hour away from Seattle. Location was perfect, view was great and peaceful! Nune is very responsive to everything.", "host": "Response from Blueberry Estates · September 2026", "hostText": "Thanks a lot, Melodina!"}, {"name": "Brenda", "meta": "Lynnwood, Washington · August 2026 · Stayed with a pet", "text": "Nune was an amazing host making sure your stay is perfect. We celebrated our 50th anniversary and a 70th birthday. She left a gift for us, very special thoughtful touch. The home is beautiful, so clean and well stocked. The view from the deck is amazing. Highly recommend this home.", "host": "Response from Blueberry Estates · September 2026", "hostText": "Thank you for choosing our Riverfront Beauty to celebrate your special day. 💗"}, {"name": "Caren", "meta": "Tacoma, Washington · August 2026 · Stayed with kids", "text": "This place was beautiful and especially peaceful with the river flowing along. Maybe not for children under five, but my husband and I would love to come back. Communication with the host was adequate.", "host": "Response from Blueberry Estates · August 2026", "hostText": "Thank you!!"}, {"name": "Jackie", "meta": "Arlington, Washington · July 2026 · Stayed with a pet", "text": "Absolutely stunning riverfront property! Enjoyed listening to the river on the large deck and in the hot tub. The house was very nicely updated and extremely clean. Had everything we needed for a wonderful stay!", "host": "Response from Blueberry Estates · August 2026", "hostText": "Thank you very much, Jackie. You also left my house extremely clean and beautiful. Guests like you make all the hard work worth it. 💗"}, {"name": "Dennis", "meta": "Marysville, Washington · August 2026 · Stayed a few nights", "text": "We really enjoyed our stay. The house is spotless and very comfortable.", "host": "Response from Blueberry Estates · August 2026", "hostText": "The pleasure is mine! Thank you!"}, {"name": "Jess", "meta": "Clarksville, Tennessee · July 2026 · Stayed with a pet", "text": "Everything was great except there was no tv to watch comfortably. There was one in an open area next to the kitchen but wasn’t visible from the couch. Also if you plan on fishing while there I would recommend looking into if that part of the river is open or closed. Host was kind enough to provide fishing poles even though fishing wasn’t open. Overall had a great stay & view was perfect!", "host": "Response from Blueberry Estates · August 2026", "hostText": "Thank you so much for staying with us and for your thoughtful feedback! We’re so glad you enjoyed your stay and the beautiful river view. Regarding the TV, there is only one wall in the living area where we can place it, as the rest of the walls have large windows overlooking the river. We chose to keep those beautiful views open, but we understand that having the TV more visible from the couch would be more comfortable. As for fishing, trout fishing is always allowed in this area, as long as guests have a valid Washington fishing license. We’re always happy to provide fishing poles for our guests to enjoy. Thank you again for staying with us. We truly appreciate your feedback and are happy you had a great stay!"}, {"name": "Jody", "meta": "Vancouver, Washington · July 2026 · Stayed with a pet", "text": "The house was perfect for our family of 5 along with our little furry friend! The backyard oasis was amazing, but we also enjoyed the comfortable beds, hot tub, fire pit, peaceful surroundings, etc. Our teen kiddos especially enjoyed jumping off the BIG rock out in the river behind the house! This was the perfect place for a family getaway - highly recommend!", "host": "Response from Blueberry Estates · July 2026", "hostText": "Thank you for your kind words. It truly means a lot to me."}, {"name": "Lauren", "meta": "Mercer Island, Washington · July 2026 · Group trip", "text": "The house was spotless, has comfy beds, a great kitchen, has cute decor, and lots of books and games. The hot tub was very, very dirty. It smelled bad and had questionable things floating in it. It was also very small and cold- it went from 99 degrees to 97 degrees from when we got in. For being the selling point of the place, it was a bad hot tub experience. We were itchy immediately after getting out. The bedrooms were pretty warm so we left the windows open, but you could hear the neighbors’ music pretty early in the morning. For the noise, dirty hot tub, and high price, I wouldn’t completely recommend this place.", "host": "Response from Blueberry Estates · July 2026", "hostText": "Thank you for your feedback, Lauren. I’m glad you enjoyed the cleanliness of the house, the comfortable beds, the kitchen, décor, and the books and games. I’m very sorry to hear about your experience with the hot tub. I will be speaking with my cleaning team to make sure they pay extra attention to inspecting and servicing it before every guest’s arrival. I’ll also review the house temperature settings to help make future stays more comfortable. I appreciate you taking the time to share your experience. Guest feedback helps us continue improving, and we’ll use your comments to make future stays even better."}, {"name": "Meghan", "meta": "Lake Charles, Louisiana · July 2026 · Stayed a few nights", "text": "This was our favorite Airbnb stay we have ever had. Nune was a spectacular host and she went above and beyond for so much. Between the beautiful views, the clean home, the comfortable beds, the car charger, and the quiet atmosphere - it was the perfect home away from home. The beds were so comfortable and the showers were hot. Everything felt like a luxury cottage. I’d recommend anyone to stay here. She had games and a hot tub. My kids loved playing checkers and we watched movies on the evenings after our hikes. A wonderful place to relax and recharge. The fire pit was great as well. We saw multiple deer in the property and it was such a treat every time. Thank you so much for everything.", "host": "Response from Blueberry Estates · July 2026", "hostText": "Thank you so much! I truly appreciate your kind feedback."}, {"name": "April", "meta": "San Jose, California · July 2026 · Stayed with kids", "text": "We absolutely loved our stay here! The house is clean, modern, and very comfortable. Having a nice view of the river made it even more special. We had a great time and would definitely stay again!", "host": "Response from Blueberry Estates · July 2026", "hostText": "Thank you very much. Come back anytime!"}, {"name": "Jase", "meta": "Denver, Colorado · July 2026 · Stayed a few nights", "text": "Beautiful location, quiet and relaxing. Would absolutely stay again!", "host": "Response from Blueberry Estates · September 2026", "hostText": "Thank you!"}, {"name": "Vakul", "meta": "Seattle, Washington · June 2026 · Stayed with kids", "text": "Great location. Thoughtfully setup for families. Amazing river view and access.", "host": "Response from Blueberry Estates · September 2026", "hostText": "Thank you!!"}, {"name": "Mantavya", "meta": "Richland, Washington · June 2026 · Stayed with a pet", "text": "Absolutely gorgeous property with a private riverfront yard. We enjoyed our stay.", "host": "Response from Blueberry Estates · June 2026", "hostText": "Thank you very much, Mantavya! We look forward to hosting you again for your next special occasion!!"}, {"name": "Tha", "meta": "Renton, Washington · September 2025 · Stayed with kids", "text": "Here’s an updated review incorporating the peaceful river: I booked this place for my son’s 2nd birthday, and it was the perfect choice! He had an absolute blast exploring the property. The surroundings were beautiful, and the peaceful river added to the serene atmosphere, making it a great spot for family celebrations. The place was also clean and spotless, which made our stay even more enjoyable. Highly recommend for anyone looking for a lovely getaway!", "host": "Response from Blueberry Estates · September 2025", "hostText": "Thank you very much, Tha. You truly made my day!:)"}, {"name": "Gleb", "meta": "Seattle, Washington · June 2025 · Stayed with kids", "text": "We had a truly wonderful stay at this cozy riverfront retreat! The house is pristinely cleaned, the decor was beautiful and welcoming, and the location was perfect—just minutes from a large grocery store and places to eat. The house was stocked with everything you could possibly need, making it incredibly convenient to settle in and feel at home right away. All we brought with us was groceries. I especially loved the thoughtful touches throughout the home, the peaceful view of the river right outside the door, and the fire pit—such a relaxing spot to unwind. Nune was so kind and accommodating, which made the whole experience even better. This is definitely one of the nicest Airbnbs we have stayed in and I would absolutely stay here again and highly recommend it to anyone looking for a comfortable, well-equipped, and serene getaway.", "host": "Response from Blueberry Estates · June 2025", "hostText": "Dear Gleb and Mellisa, You have a forever invitation to my home! Thank you so much for your thoughtful review. It truly meant a lot. I’m grateful for your kind words and hope to welcome you back anytime! Warmest regards, Nune"}, {"name": "Colleen", "meta": "Tucson, Arizona · June 2026 · Stayed a few nights", "text": "Absolutely lovely location and home. Recently remodeled to very modern standards. Spacious, very clean and Wow… the views of the bubbling river out the huge windows was mesmerizing. The host has provided so many lovely touches both inside and out. Walkable neighborhood and so close to both Granite Falls and Lake Stevens. The Mountain loop highway and hikes are minutes away. Comfortable furnishings and shades to block out the light made for a good sleep. Our favorite was being outside on the patio, or in the swing, fire ring seats or net hammock …listening to the sounds of the river. The house is well stocked for comfort and host gives lots of information to help during your stay. Highly recommended and will be a pleasure to return one day.", "host": "Response from Blueberry Estates · June 2026", "hostText": "Thank you very much for your kind words. I truly appreciate them."}, {"name": "Alicia", "meta": "Lynnwood, Washington · August 2025 · Stayed a few nights", "text": "Husband and I took some time away for our 29th anniversary and we loved this Airbnb! The place inside and out was beautiful. The river was calming and the grounds were private. Host was quick to reply when I had a question (which would have been answered had I taken the time to read the welcome book). The house had everything we needed and it was a very comfortable & relaxing. Looking forward to going back when we can clear some time on the calendar.", "host": "Response from Blueberry Estates · August 2025", "hostText": "Thank you so much, Alicia, for staying with us! It was truly a pleasure to host you. Wishing you all the best, and you’re always welcome back anytime! 🌿✨"}, {"name": "Adria", "meta": "Arroyo Grande, California · July 2025 · Stayed with kids", "text": "The view from the back deck of the home is stunning. Listening to the river while enjoying the surroundings was so peaceful and relaxing. Our kids enjoyed the net hammock and the swing overlooking the river. The location is a bit remote and there isn’t a ton of things close to the home but it is definitely a place to unwind and chill. We were only here one night so we didn’t get to explore much but the surrounding area is beautiful. The beds were comfortable with lots of pillows and blankets. The inside of the home, kitchen and bathrooms look newly updated and had everything we needed for our stay.", "host": "Response from Blueberry Estates · July 2025", "hostText": "Thank you!"}];
+    const stage = document.getElementById('stage');
+    const scrim = document.getElementById('scrim');
+    const MAX = 10;
+    const FADE_IN = 4800;
+    const HOLD = 5600;
+    const FADE_OUT = 2400;
+    let openCard = null;
+    let alive = 0;
+    const showing = new Set();
+
+    function size() {
+      return window.innerWidth < 700 ? 168 : 220;
+    }
+
+    function pickReview() {
+      const open = [];
+      for (let i = 0; i < REVIEWS.length; i++) if (!showing.has(i)) open.push(i);
+      if (!open.length) return -1;
+      return open[Math.floor(Math.random() * open.length)];
+    }
+
+    function place(card) {
+      const box = size();
+      const left = Math.random() * Math.max(0, stage.clientWidth - box);
+      const top = Math.random() * Math.max(0, stage.clientHeight - box);
+      card._home = { left, top };
+      card.style.left = left + 'px';
+      card.style.top = top + 'px';
+    }
+
+    function fadeOut(card) {
+      if (!card.isConnected || card.classList.contains('open') || card._leaving) return;
+      card._leaving = true;
+      card.classList.remove('in');
+      card.classList.add('out');
+      card._remove = setTimeout(() => {
+        showing.delete(card._reviewIndex);
+        card.remove();
+        alive = Math.max(0, alive - 1);
+      }, FADE_OUT);
+    }
+
+    function spawn() {
+      if (alive >= MAX) return;
+      const index = pickReview();
+      if (index < 0) return;
+      showing.add(index);
+      const review = REVIEWS[index];
+      const card = document.createElement('article');
+      card.className = 'bubble';
+      card._reviewIndex = index;
+      card.style.width = size() + 'px';
+      card.style.height = size() + 'px';
+      place(card);
+      card.innerHTML = `
+        <div class="who"></div>
+        <div class="meta"></div>
+        <div class="stars">★★★★★</div>
+        <p class="text"></p>
+        ${review.hostText ? `<div class="host"><strong></strong><span></span></div>` : ''}
+      `;
+      card.querySelector('.who').textContent = review.name;
+      card.querySelector('.meta').textContent = review.meta;
+      card.querySelector('.text').textContent = review.text;
+      if (review.hostText) {
+        card.querySelector('.host strong').textContent = review.host;
+        card.querySelector('.host span').textContent = review.hostText;
+      }
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        open(card);
+      });
+      stage.appendChild(card);
+      alive += 1;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => card.classList.add('in'));
+      });
+      card._die = setTimeout(() => fadeOut(card), FADE_IN + HOLD);
+    }
+
+    function open(card) {
+      if (openCard && openCard !== card) close(openCard, false);
+      clearTimeout(card._die);
+      clearTimeout(card._remove);
+      card._leaving = false;
+      card.style.width = '';
+      card.style.height = '';
+      card.classList.remove('out');
+      card.classList.add('in', 'open');
+      openCard = card;
+      scrim.classList.add('on');
+    }
+
+    function close(card, fade) {
+      if (!card) return;
+      card.classList.add('glide');
+      card.classList.remove('open');
+      const box = size();
+      card.style.width = box + 'px';
+      card.style.height = box + 'px';
+      if (card._home) {
+        card.style.left = card._home.left + 'px';
+        card.style.top = card._home.top + 'px';
+      }
+      card._hold = true;
+      if (openCard === card) {
+        openCard = null;
+        scrim.classList.remove('on');
+      }
+      if (fade !== false) {
+        setTimeout(() => {
+          card._hold = false;
+          card.classList.remove('glide');
+          fadeOut(card);
+        }, 480);
+      } else {
+        card._hold = false;
+        card.classList.remove('glide');
+      }
+    }
+
+    scrim.addEventListener('click', () => { if (openCard) close(openCard); });
+
+    function loop() {
+      spawn();
+      const wait = alive >= MAX ? 400 : 500 + Math.random() * 1400;
+      setTimeout(loop, wait);
+    }
+    for (let i = 0; i < 4; i++) setTimeout(spawn, i * 350);
+    setTimeout(loop, 1600);
+  </script>
+</body>
+</html>
