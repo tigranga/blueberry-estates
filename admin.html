@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host Dashboard | RiverStone Direct</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <style>
+    .admin-container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .tabs button { background: #fffdfb; border: 1px solid #e6dfd6; padding: 10px 16px; font-size: 0.95rem; cursor: pointer; border-radius: 999px; font-family: inherit; transition: background 0.2s, transform 0.2s; }
+    .tabs button.active { background: #e7f0f6; border-color: #8eafc6; font-weight: 650; color: #3f6278; }
+    .tabs button:hover { transform: translateY(-1px); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+    th { background: #f7f7f7; }
+    .status-pending { color: #e67e22; }
+    .status-confirmed { color: #27ae60; }
+    .listing-card { border: 1px solid #e6dfd6; border-radius: 20px; padding: 18px; margin-bottom: 14px; position: relative; cursor: pointer; transition: transform 0.25s, box-shadow 0.25s; display: flex; gap: 16px; align-items: flex-start; background: #fffdfb; }
+    .listing-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(95, 110, 130, 0.1); }
+    .listing-thumb { width: 120px; height: 90px; object-fit: cover; border-radius: 14px; flex-shrink: 0; background: #e7f0f6; }
+    .delete-icon { position: absolute; top: 12px; right: 12px; background: none; border: none; color: #7d8796; font-size: 1.1rem; cursor: pointer; padding: 4px; border-radius: 8px; z-index: 2; transition: color 0.2s, background 0.2s, transform 0.2s; }
+    .listing-info { flex: 1; min-width: 0; }
+    form.listing-form label { display: block; margin: 12px 0; }
+    form.listing-form input, form.listing-form textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    .sync-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 16px 0 24px; padding: 12px; border: 1px solid #eee; border-radius: 12px; }
+    .sync-bar label { font-size: 0.8rem; color: #717171; }
+    .sync-bar input { display: block; margin-top: 4px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; min-width: 240px; }
+    #sync-status { font-size: 0.85rem; color: #444; }
+    .cal-wrap { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+    @media (max-width: 860px) { .cal-wrap { grid-template-columns: 1fr; } }
+    .cal-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .cal-toolbar select, .cal-toolbar input { padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .cal-header button { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; user-select: none; }
+    .cal-day-name { text-align: center; font-size: 0.75rem; color: #717171; padding: 4px 0; font-weight: 600; }
+    .cal-day { min-height: 78px; border: 1px solid #e6dfd6; border-radius: 14px; padding: 6px; cursor: pointer; background: #fffdfb; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s, border-color 0.15s, background 0.15s; }
+    .cal-day:hover { border-color: #8eafc6; transform: translateY(-1px); }
+    .cal-day.blocked { background: #f6e7e4; color: #8a5c58; }
+    .cal-day.booked { background: #e5f2e8; border-color: #b7cbb8; }
+    .cal-day.selected { outline: 2px solid #6f97b3; outline-offset: -2px; }
+    .cal-day.today .dnum { background: #6f97b3; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; }
+    .cal-day .dnum { font-weight: 600; font-size: 0.85rem; }
+    .cal-day .dprice { font-size: 0.75rem; color: #222; }
+    .cal-day .dnote { font-size: 0.65rem; color: #717171; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-day.blocked .dprice { text-decoration: line-through; }
+    .cal-day.custom .dprice { color: #5d8a68; font-weight: 700; }
+    .cal-day.past { opacity: 0.45; cursor: default; }
+    .cal-day.empty { border: none; background: transparent; cursor: default; min-height: 0; }
+    .cal-legend { margin-top: 12px; font-size: 0.8rem; color: #717171; display: flex; gap: 14px; flex-wrap: wrap; }
+    .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; border: 1px solid #ddd; }
+    .side-panel { border: 1px solid #ebebeb; border-radius: 16px; padding: 16px; background: #fff; position: sticky; top: 16px; }
+    .side-panel h3 { margin: 0 0 8px; }
+    .seg { display: flex; border: 1px solid #ddd; border-radius: 999px; overflow: hidden; margin: 10px 0; }
+    .seg button { flex: 1; border: none; background: #fff; padding: 8px; cursor: pointer; }
+    .seg button.on { background: #6f97b3; color: #fff; }
+    .side-panel label { display: block; font-size: 0.85rem; margin: 10px 0; }
+    .side-panel input, .side-panel textarea, .side-panel select { width: 100%; margin-top: 4px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+    .settings-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .settings-row label { font-size: 0.75rem; color: #717171; display: block; }
+    .settings-row input, .settings-row select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; margin-top: 4px; }
+    .res-card { background: #f7f7f7; border-radius: 10px; padding: 10px; margin-top: 8px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <img src="logo.png" alt="River Lodge by Blueberry Estates" style="height:58px; width:auto; vertical-align:middle; margin-right:8px;">
+      <span>River Lodge by Blueberry Estates</span>
+    </div>
+    <nav>
+      <a href="index.html">Listing</a>
+      <a href="testimonials.html">Testimonials</a>
+      <a href="index.html#book">Book Now</a>
+      <a href="admin.html">Host Dashboard</a>
+    </nav>
+  </header>
+
+  <div class="admin-container">
+    <h1>Host Dashboard</h1>
+    <p>Changes stay on this browser until you publish them. Guests read the published copy from the site database.</p>
+    <div class="sync-bar">
+      <label>Host key
+        <input id="admin-token" type="password" autocomplete="current-password" placeholder="Same value as ADMIN_TOKEN">
+      </label>
+      <button type="button" class="action" id="publish-btn">Publish to site</button>
+      <span id="sync-status"></span>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="bookings">Bookings</button>
+      <button data-tab="listings">Listings</button>
+      <button data-tab="calendar">Calendar</button>
+    </div>
+
+    <div id="bookings" class="panel active">
+      <h2>Incoming Booking Requests</h2>
+      <div id="bookings-list">Loading...</div>
+    </div>
+
+    <div id="calendar" class="panel">
+      <h2>Calendar</h2>
+      <div class="cal-toolbar">
+        <select id="cal-listing"></select>
+        <button type="button" class="action" id="cal-today">Today</button>
+      </div>
+      <div class="settings-row" id="cal-settings"></div>
+      <div class="cal-wrap">
+        <div>
+          <div class="cal-header">
+            <button type="button" id="cal-prev">‹</button>
+            <strong id="cal-month-label"></strong>
+            <button type="button" id="cal-next">›</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend">
+            <span><i class="swatch" style="background:#fff"></i> Available</span>
+            <span><i class="swatch" style="background:#f3f3f3"></i> Blocked</span>
+            <span><i class="swatch" style="background:#e8f6ee"></i> Booked</span>
+            <span><i class="swatch" style="background:#fff;border-color:#008A05"></i> Custom price</span>
+          </div>
+          <p style="font-size:0.8rem;color:#717171;margin-top:8px;">Click a night or drag across a range. Then set availability, price, minimum nights, and a private note — the same controls as the Airbnb host calendar.</p>
+        </div>
+        <aside class="side-panel" id="cal-panel">
+          <h3>Select dates</h3>
+          <p style="color:#717171;font-size:0.9rem;margin:0;">Click or drag nights on the calendar to edit them.</p>
+        </aside>
+      </div>
+    </div>
+
+    <div id="listings" class="panel">
+      <h2>Your Listings</h2>
+      <div id="listings-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tabs button');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    function loadBookings() {
+      const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+      const container = document.getElementById('bookings-list');
+      if (bookings.length === 0) {
+        container.innerHTML = '<p>No booking requests yet.</p>';
+        return;
+      }
+      let html = '<table><tr><th>ID</th><th>Guest</th><th>Dates</th><th>Guests</th><th>Status</th><th>Actions</th></tr>';
+      bookings.slice().reverse().forEach(b => {
+        html += `<tr>
+          <td>${b.id}</td>
+          <td>${b.name}<br><small>${b.email}</small></td>
+          <td>${b.checkin} → ${b.checkout}</td>
+          <td>${b.guests}</td>
+          <td class="status-${b.status}">${b.status}</td>
+          <td>
+            ${b.status === 'pending' ? `<button class="action" onclick="confirmBooking(${b.id})">Confirm</button>` : ''}
+            <button onclick="deleteBooking(${b.id})" class="action-secondary">Delete</button>
+          </td>
+        </tr>`;
+      });
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    function confirmBooking(id) {
+      let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+      const b = bookings.find(x => x.id === id);
+      if (b) b.status = 'confirmed';
+      localStorage.setItem('bookings', JSON.stringify(bookings));
+      loadBookings();
+    }
+
+    function deleteBooking(id) {
+      if (!confirm('Delete this booking?')) return;
+      let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+      bookings = bookings.filter(x => x.id !== id);
+      localStorage.setItem('bookings', JSON.stringify(bookings));
+      loadBookings();
+    }
+
+    // Listings management
+    function getListings() {
+      let listings = JSON.parse(localStorage.getItem('listings') || 'null');
+      if (!listings) {
+        // Seed with the RiverStone listing
+        listings = [{
+          id: 1,
+          title: 'RiverStone Retreat ~ Hot Tub w/View, Fire Pit',
+          location: 'Granite Falls, Washington',
+          price: 249,
+          guests: 6,
+          bedrooms: 2,
+          desc: 'Mid-century riverfront home on the Stillaguamish with hot tub, fire pit, and full acre of land.',
+          photo: 'photos/01.jpg'
+        }];
+        localStorage.setItem('listings', JSON.stringify(listings));
+      }
+      return listings;
+    }
+
+    function loadListings() {
+      const listings = getListings();
+      const container = document.getElementById('listings-list');
+      let html = listings.map(l => {
+        const thumb = (l.photos && l.photos[0]) || l.photo || '';
+        return `
+        <div class="listing-card" onclick="location.href='edit-listing.html?id=${l.id}'">
+          <button class="delete-icon" onclick="event.stopPropagation(); deleteListing(${l.id})" title="Delete listing">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+          ${thumb ? `<img class="listing-thumb" src="${thumb}" alt="">` : '<div class="listing-thumb"></div>'}
+          <div class="listing-info">
+            <strong>${l.title}</strong> — $${l.price}/night<br>
+            <small>${l.location} · ${l.guests} guests · ${l.bedrooms} bedrooms</small>
+            <p>${l.desc}</p>
+          </div>
+        </div>
+      `;
+      }).join('');
+      html += `
+        <div class="listing-card" style="text-align:center; border-style:dashed;" onclick="location.href='edit-listing.html'">
+          <strong>+ Add New Listing</strong>
+          <p style="margin:8px 0 0; color:#717171;">Create a new property listing</p>
+        </div>
+      `;
+      container.innerHTML = html;
+    }
+
+    function deleteListing(id) {
+      if (!confirm('Are you sure you want to delete this listing? This cannot be undone.')) return;
+      let listings = getListings().filter(x => x.id !== id);
+      localStorage.setItem('listings', JSON.stringify(listings));
+      loadListings();
+      publishAll(false);
+    }
+
+    loadBookings();
+    loadListings();
+
+    // ---- Host calendar (Airbnb-style) ----
+    const CAL_KEY = 'hostCalendar';
+    let calYear = new Date().getFullYear();
+    let calMonth = new Date().getMonth();
+    let dragStart = null;
+    let selected = [];
+
+    function defaultCal() {
+      return {
+        listingId: '1',
+        settings: { basePrice: 249, minNights: 2, maxNights: 14, advanceNotice: 1, prepNights: 1, windowMonths: 12 },
+        days: {}
+      };
+    }
+    function loadCal() {
+      const raw = JSON.parse(localStorage.getItem(CAL_KEY) || 'null') || defaultCal();
+      raw.settings = { ...defaultCal().settings, ...(raw.settings || {}) };
+      raw.days = raw.days || {};
+      return raw;
+    }
+    function saveCal(cal) {
+      localStorage.setItem(CAL_KEY, JSON.stringify(cal));
+      const blocked = Object.entries(cal.days).filter(([, v]) => v.blocked).map(([d]) => d);
+      localStorage.setItem('blockedDates', JSON.stringify(blocked));
+      publishAll(false);
+    }
+    function iso(y, m, d) {
+      return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    function parseIso(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+    function fmtRange(dates) {
+      if (!dates.length) return '';
+      const a = dates[0], b = dates[dates.length - 1];
+      const opt = { month: 'short', day: 'numeric' };
+      return a === b ? parseIso(a).toLocaleDateString(undefined, opt) : `${parseIso(a).toLocaleDateString(undefined, opt)} – ${parseIso(b).toLocaleDateString(undefined, opt)}`;
+    }
+    function nightsBetween(a, b) {
+      const out = [];
+      const d = parseIso(a < b ? a : b);
+      const end = parseIso(a < b ? b : a);
+      while (d <= end) {
+        out.push(iso(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setDate(d.getDate() + 1);
+      }
+      return out;
+    }
+    function bookingsFor(listingId) {
+      return JSON.parse(localStorage.getItem('bookings') || '[]').filter(b => b.status !== 'cancelled');
+    }
+    function bookingOn(dateStr) {
+      return bookingsFor().find(b => b.checkin && b.checkout && dateStr >= b.checkin && dateStr < b.checkout);
+    }
+
+    function renderListingSelect() {
+      const sel = document.getElementById('cal-listing');
+      const listings = getListings();
+      const cal = loadCal();
+      sel.innerHTML = listings.map(l => `<option value="${l.id}">${l.title}</option>`).join('');
+      if ([...sel.options].some(o => o.value === String(cal.listingId))) sel.value = cal.listingId;
+      sel.onchange = () => {
+        const c = loadCal();
+        c.listingId = sel.value;
+        const listing = listings.find(l => String(l.id) === sel.value);
+        if (listing && listing.price) c.settings.basePrice = listing.price;
+        saveCal(c);
+        renderSettings();
+        renderCalendar();
+      };
+    }
+
+    function renderSettings() {
+      const s = loadCal().settings;
+      document.getElementById('cal-settings').innerHTML = `
+        <label>Base price / night<input id="set-price" type="number" min="1" value="${s.basePrice}"></label>
+        <label>Min nights<input id="set-min" type="number" min="1" value="${s.minNights}"></label>
+        <label>Max nights<input id="set-max" type="number" min="1" value="${s.maxNights}"></label>
+        <label>Advance notice
+          <select id="set-notice">
+            ${[0,1,2,3,7].map(n => `<option value="${n}" ${s.advanceNotice==n?'selected':''}>${n===0?'Same day':
++' day'+(n>1?'s':'')}</option>`).join('')}
+          </select>
+        </label>
+        <label>Prep time
+          <select id="set-prep">
+            ${[0,1,2].map(n => `<option value="${n}" ${s.prepNights==n?'selected':''}>${n===0?'None':
++' night'+(n>1?'s':'')+' blocked after checkout'}</option>`).join('')}
+          </select>
+        </label>
+        <label>Availability window
+          <select id="set-window">
+            ${[3,6,9,12,24].map(n => `<option value="${n}" ${s.windowMonths==n?'selected':''}>${n} months</option>`).join('')}
+          </select>
+        </label>`;
+      ['set-price','set-min','set-max','set-notice','set-prep','set-window'].forEach(id => {
+        document.getElementById(id).onchange = () => {
+          const c = loadCal();
+          c.settings.basePrice = +document.getElementById('set-price').value || 249;
+          c.settings.minNights = +document.getElementById('set-min').value || 1;
+          c.settings.maxNights = +document.getElementById('set-max').value || 14;
+          c.settings.advanceNotice = +document.getElementById('set-notice').value;
+          c.settings.prepNights = +document.getElementById('set-prep').value;
+          c.settings.windowMonths = +document.getElementById('set-window').value;
+          saveCal(c);
+          renderCalendar();
+        };
+      });
+    }
+
+    function renderCalendar() {
+      const cal = loadCal();
+      const grid = document.getElementById('cal-grid');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const horizon = new Date(today); horizon.setMonth(horizon.getMonth() + (cal.settings.windowMonths || 12));
+      document.getElementById('cal-month-label').textContent = new Date(calYear, calMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const sel = new Set(selected);
+      let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-day-name">${d}</div>`).join('');
+      for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = iso(calYear, calMonth, d);
+        const date = new Date(calYear, calMonth, d);
+        const meta = cal.days[dateStr] || {};
+        const book = bookingOn(dateStr);
+        const past = date < today;
+        const beyond = date > horizon;
+        const price = meta.price || cal.settings.basePrice;
+        const custom = meta.price && meta.price !== cal.settings.basePrice;
+        const blocked = !!meta.blocked || beyond;
+        const cls = ['cal-day', blocked && 'blocked', book && 'booked', custom && 'custom', sel.has(dateStr) && 'selected', date.getTime()===today.getTime() && 'today', past && 'past'].filter(Boolean).join(' ');
+        const guest = book && book.checkin === dateStr ? `<div class="dnote">${book.name || 'Reserved'}</div>` : (meta.note ? `<div class="dnote">${meta.note}</div>` : '');
+        html += `<div class="${cls}" data-date="${dateStr}" data-past="${past?1:0}">
+          <div class="dnum">${d}</div>
+          <div class="dprice">${blocked && !book ? 'Blocked' : '$'+price}</div>
+          ${guest}
+        </div>`;
+      }
+      grid.innerHTML = html;
+    }
+
+    function openPanel() {
+      const panel = document.getElementById('cal-panel');
+      if (!selected.length) {
+        panel.innerHTML = '<h3>Select dates</h3><p style="color:#717171;font-size:0.9rem;margin:0;">Click or drag nights on the calendar to edit them.</p>';
+        return;
+      }
+      const cal = loadCal();
+      const dates = [...selected].sort();
+      const sample = cal.days[dates[0]] || {};
+      const booked = dates.map(bookingOn).filter(Boolean);
+      const uniqueBooks = [...new Map(booked.map(b => [b.id, b])).values()];
+      panel.innerHTML = `
+        <h3>${fmtRange(dates)}</h3>
+        <p style="margin:0 0 8px;color:#717171;font-size:0.85rem;">${dates.length} night${dates.length>1?'s':''}</p>
+        ${uniqueBooks.map(b => `<div class="res-card"><strong>${b.name || 'Guest'}</strong><br>${b.checkin} → ${b.checkout}<br>${b.guests || ''} guests · ${b.status || 'booked'}</div>`).join('')}
+        <div class="seg">
+          <button type="button" id="avail-on" class="${sample.blocked?'':'on'}">Available</button>
+          <button type="button" id="avail-off" class="${sample.blocked?'on':''}">Blocked</button>
+        </div>
+        <label>Nightly price ($)
+          <input id="edit-price" type="number" min="1" placeholder="${cal.settings.basePrice}" value="${sample.price || ''}">
+        </label>
+        <label>Minimum nights
+          <input id="edit-min" type="number" min="1" placeholder="${cal.settings.minNights}" value="${sample.minNights || ''}">
+        </label>
+        <label>Private note
+          <textarea id="edit-note" rows="2" placeholder="Only you can see this">${sample.note || ''}</textarea>
+        </label>
+        <button type="button" class="action" id="save-dates" style="width:100%;margin-top:8px;">Save</button>
+        <button type="button" id="clear-dates" style="width:100%;margin-top:8px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px;cursor:pointer;">Clear custom settings</button>
+      `;
+      let blocked = !!sample.blocked;
+      document.getElementById('avail-on').onclick = () => { blocked = false; document.getElementById('avail-on').classList.add('on'); document.getElementById('avail-off').classList.remove('on'); };
+      document.getElementById('avail-off').onclick = () => { blocked = true; document.getElementById('avail-off').classList.add('on'); document.getElementById('avail-on').classList.remove('on'); };
+      document.getElementById('save-dates').onclick = () => {
+        const c = loadCal();
+        const price = document.getElementById('edit-price').value;
+        const minN = document.getElementById('edit-min').value;
+        const note = document.getElementById('edit-note').value.trim();
+        dates.forEach(d => {
+          const prev = c.days[d] || {};
+          const next = { ...prev, blocked };
+          if (price) next.price = +price; else delete next.price;
+          if (minN) next.minNights = +minN; else delete next.minNights;
+          if (note) next.note = note; else delete next.note;
+          if (!next.blocked && !next.price && !next.minNights && !next.note) delete c.days[d];
+          else c.days[d] = next;
+        });
+        saveCal(c);
+        renderCalendar();
+      };
+      document.getElementById('clear-dates').onclick = () => {
+        const c = loadCal();
+        dates.forEach(d => delete c.days[d]);
+        saveCal(c);
+        selected = [];
+        renderCalendar();
+        openPanel();
+      };
+    }
+
+    const gridEl = document.getElementById('cal-grid');
+    gridEl.addEventListener('mousedown', (e) => {
+      const cell = e.target.closest('.cal-day[data-date]');
+      if (!cell || cell.dataset.past === '1') return;
+      dragStart = cell.dataset.date;
+      selected = [dragStart];
+      renderCalendar();
+      e.preventDefault();
+    });
+    gridEl.addEventListener('mouseover', (e) => {
+      if (!dragStart) return;
+      const cell = e.target.closest('.cal-day[data-date]');
+      if (!cell || cell.dataset.past === '1') return;
+      selected = nightsBetween(dragStart, cell.dataset.date);
+      renderCalendar();
+    });
+    window.addEventListener('mouseup', () => {
+      if (!dragStart) return;
+      dragStart = null;
+      openPanel();
+    });
+
+    document.getElementById('cal-prev').onclick = () => { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); };
+    document.getElementById('cal-next').onclick = () => { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); };
+    document.getElementById('cal-today').onclick = () => { const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); renderCalendar(); };
+
+    function adminToken() {
+      return (localStorage.getItem('adminToken') || '').trim();
+    }
+
+    async function publishAll(manual) {
+      const status = document.getElementById('sync-status');
+      const token = adminToken();
+      if (!token) {
+        if (manual && status) status.textContent = 'Enter the host key first. It must match ADMIN_TOKEN in Cloudflare.';
+        return;
+      }
+      if (status && manual) status.textContent = 'Publishing…';
+      try {
+        const res = await fetch('/api/content', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({
+            listings: JSON.parse(localStorage.getItem('listings') || '[]'),
+            calendar: JSON.parse(localStorage.getItem('hostCalendar') || 'null')
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (status) status.textContent = res.ok ? 'Published. Guests now see this data.' : (data.error || 'Could not publish');
+      } catch (err) {
+        if (status) status.textContent = 'Could not reach the site.';
+      }
+    }
+
+    async function pullRemote() {
+      const status = document.getElementById('sync-status');
+      try {
+        const res = await fetch('/api/content');
+        const data = await res.json();
+        if (!data.connected) {
+          if (status) status.textContent = data.error || 'Database is not connected yet. Bind a D1 database as DB, set ADMIN_TOKEN, then publish.';
+          return;
+        }
+        if (Array.isArray(data.listings) && data.listings.length) {
+          localStorage.setItem('listings', JSON.stringify(data.listings));
+        }
+        if (data.calendar) localStorage.setItem('hostCalendar', JSON.stringify(data.calendar));
+        if (status) status.textContent = 'Loaded the published copy from the site.';
+      } catch (err) {
+        if (status) status.textContent = 'Could not reach /api/content.';
+      }
+    }
+
+    document.getElementById('admin-token').value = adminToken();
+    document.getElementById('admin-token').addEventListener('change', (e) => {
+      localStorage.setItem('adminToken', e.target.value.trim());
+    });
+    document.getElementById('publish-btn').addEventListener('click', () => {
+      localStorage.setItem('adminToken', document.getElementById('admin-token').value.trim());
+      publishAll(true);
+    });
+
+    pullRemote().finally(() => {
+      loadBookings();
+      loadListings();
+      renderListingSelect();
+      renderSettings();
+      renderCalendar();
+      openPanel();
+    });
+  </script>
+</body>
+</html>
