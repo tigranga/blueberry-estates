@@ -330,14 +330,12 @@
         <label>Max nights<input id="set-max" type="number" min="1" value="${s.maxNights}"></label>
         <label>Advance notice
           <select id="set-notice">
-            ${[0,1,2,3,7].map(n => `<option value="${n}" ${s.advanceNotice==n?'selected':''}>${n===0?'Same day':
-+' day'+(n>1?'s':'')}</option>`).join('')}
+            ${[0,1,2,3,7].map(n => `<option value="${n}" ${s.advanceNotice==n?'selected':''}>${n===0?'Same day':n+' day'+(n>1?'s':'')}</option>`).join('')}
           </select>
         </label>
         <label>Prep time
           <select id="set-prep">
-            ${[0,1,2].map(n => `<option value="${n}" ${s.prepNights==n?'selected':''}>${n===0?'None':
-+' night'+(n>1?'s':'')+' blocked after checkout'}</option>`).join('')}
+            ${[0,1,2].map(n => `<option value="${n}" ${s.prepNights==n?'selected':''}>${n===0?'None':n+' night'+(n>1?'s':'')+' blocked after checkout'}</option>`).join('')}
           </select>
         </label>
         <label>Availability window
