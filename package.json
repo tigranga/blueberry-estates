@@ -1,6 +1,9 @@
 {
   "name": "blueberry-estates",
   "private": true,
+  "scripts": {
+    "build": "node scripts/unpack-assets.js"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.1.0"
   }
