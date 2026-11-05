@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Listing | River Lodge by Blueberry Estates</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .edit-shell { padding: 20px 28px 110px; }
+    .edit-shell.general { max-width: 760px; margin: 0 auto; }
+    .edit-shell.media { max-width: none; }
+    .edit-top { padding: 20px 0 0; }
+    .edit-top h1 { text-align: center; margin: 0 0 14px; }
+    .edit-tabs {
+      display: flex;
+      justify-content: flex-start;
+      gap: 8px;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+    .edit-tabs button {
+      background: #fffdfb; border: 1px solid #e6dfd6; border-radius: 999px;
+      padding: 8px 18px; font-family: inherit; cursor: pointer; color: #3c4452;
+    }
+    .edit-tabs button.on { background: #e7f0f6; border-color: #8eafc6; color: #3f6278; font-weight: 650; }
+    .panel { display: none; }
+    .panel.on { display: block; }
+    label { display: block; margin: 14px 0; font-weight: 600; color: #556070; font-size: 0.9rem; }
+    .media-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .media-bar input { flex: 1; margin-top: 0; }
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      min-height: calc(100vh - 240px);
+    }
+    .media-card {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #e7eef3;
+      cursor: grab;
+      box-shadow: 0 8px 20px rgba(95, 110, 130, 0.08);
+      border: 2px solid transparent;
+    }
+    .media-card:active { cursor: grabbing; }
+    .media-card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }
+    .media-card.dragging { opacity: 0.35; pointer-events: none; }
+    .media-card.cover { border-color: #c9a06a; }
+    .chip {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(255,253,251,0.92); color: #3c4452;
+      border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; font-weight: 650;
+    }
+    .media-card .remove {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border: none; border-radius: 50%;
+      background: rgba(255,253,251,0.92); color: #8a5c58; cursor: pointer; font-size: 1rem;
+    }
+    .save-bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: flex-end; gap: 12px;
+      padding: 14px 28px;
+      background: rgba(255,253,251,0.92);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid #e6dfd6;
+    }
+    .btn { background: linear-gradient(180deg, #9dbdd2, #6f97b3); color: white; border: none; padding: 10px 16px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+    .btn-secondary { background: #efe8e0; color: #3c4452; text-decoration: none; display: inline-flex; align-items: center; }
+    @media (max-width: 700px) {
+      .edit-shell { padding: 16px 14px 110px; }
+      .edit-tabs { padding: 0 14px; }
+      .media-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <img src="logo.png" alt="River Lodge by Blueberry Estates" style="height:58px; width:auto; vertical-align:middle; margin-right:8px;">
+      <span>River Lodge by Blueberry Estates</span>
+    </div>
+    <nav>
+      <a href="admin.html">← Back to Dashboard</a>
+    </nav>
+  </header>
+
+  <div class="edit-top">
+    <h1 id="page-title">Edit Listing</h1>
+    <div class="edit-tabs">
+      <button type="button" class="on" data-tab="general">General</button>
+      <button type="button" data-tab="media">Media</button>
+    </div>
+  </div>
+
+  <div class="edit-shell general" id="shell">
+
+    <form id="edit-form">
+      <input type="hidden" id="listing-id">
+      <div id="general" class="panel on">
+        <label>Title <input type="text" id="title" required></label>
+        <label>Location <input type="text" id="location" required></label>
+        <label>Nightly Price ($) <input type="number" id="price" required></label>
+        <label>Max Guests <input type="number" id="guests" required></label>
+        <label>Bedrooms <input type="number" id="bedrooms"></label>
+        <label>Description <textarea id="desc" rows="6"></textarea></label>
+      </div>
+
+      <div id="media" class="panel">
+        <div class="media-bar">
+          <input type="url" id="new-photo" placeholder="Add a photo URL">
+          <button type="button" class="btn" id="add-photo">Add</button>
+        </div>
+        <div id="media-grid" class="media-grid"></div>
+      </div>
+
+      <div class="save-bar">
+        <a href="admin.html" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn">Save Listing</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const SITE_PHOTOS = Array.from({ length: 22 }, (_, i) => `photos/${String(i + 1).padStart(2, '0')}.jpg`);
+    const params = new URLSearchParams(location.search);
+    const listingId = params.get('id');
+    const isNew = !listingId;
+    let photos = [];
+    let dragging = null;
+
+    function getListings() {
+      return JSON.parse(localStorage.getItem('listings') || '[]');
+    }
+    function saveListings(listings) {
+      localStorage.setItem('listings', JSON.stringify(listings));
+    }
+
+    function renderPhotos() {
+      const grid = document.getElementById('media-grid');
+      grid.innerHTML = photos.map((url, i) => `
+        <div class="media-card${i === 0 ? ' cover' : ''}" draggable="true" data-url="${url}">
+          <img src="${url}" alt="">
+          <span class="chip">${i === 0 ? 'Cover' : i + 1}</span>
+          <button type="button" class="remove" data-remove="${i}" title="Remove">×</button>
+        </div>
+      `).join('');
+    }
+
+    function refreshChips() {
+      document.querySelectorAll('.media-card').forEach((card, i) => {
+        card.classList.toggle('cover', i === 0);
+        card.querySelector('.chip').textContent = i === 0 ? 'Cover' : String(i + 1);
+        card.querySelector('.remove').dataset.remove = String(i);
+      });
+    }
+
+    function syncFromDom() {
+      photos = [...document.querySelectorAll('.media-card')].map(card => card.dataset.url);
+      refreshChips();
+    }
+
+    const grid = document.getElementById('media-grid');
+    grid.addEventListener('dragstart', (e) => {
+      const card = e.target.closest('.media-card');
+      if (!card) return;
+      dragging = card;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', card.dataset.url);
+      requestAnimationFrame(() => card.classList.add('dragging'));
+    });
+    grid.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!dragging) return;
+      const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.media-card');
+      if (!over || over === dragging) return;
+      const cards = [...grid.children];
+      const from = cards.indexOf(dragging);
+      const to = cards.indexOf(over);
+      if (from < to) over.after(dragging);
+      else over.before(dragging);
+    });
+    grid.addEventListener('drop', (e) => e.preventDefault());
+    grid.addEventListener('dragend', () => {
+      if (dragging) dragging.classList.remove('dragging');
+      dragging = null;
+      syncFromDom();
+    });
+    grid.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-remove]');
+      if (!btn) return;
+      photos.splice(Number(btn.dataset.remove), 1);
+      renderPhotos();
+    });
+
+    document.getElementById('add-photo').addEventListener('click', () => {
+      const input = document.getElementById('new-photo');
+      const url = input.value.trim();
+      if (!url) return;
+      photos.push(url);
+      input.value = '';
+      renderPhotos();
+    });
+
+    document.querySelectorAll('.edit-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.edit-tabs button').forEach(b => b.classList.remove('on'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+        btn.classList.add('on');
+        document.getElementById(btn.dataset.tab).classList.add('on');
+        document.getElementById('shell').className = 'edit-shell ' + btn.dataset.tab;
+      });
+    });
+
+    if (!isNew) {
+      const listing = getListings().find(l => l.id == listingId);
+      if (listing) {
+        document.getElementById('listing-id').value = listing.id;
+        document.getElementById('title').value = listing.title || '';
+        document.getElementById('location').value = listing.location || '';
+        document.getElementById('price').value = listing.price || '';
+        document.getElementById('guests').value = listing.guests || '';
+        document.getElementById('bedrooms').value = listing.bedrooms || '';
+        document.getElementById('desc').value = listing.desc || '';
+        const saved = listing.photos && listing.photos.length > 1 ? listing.photos : (listing.photo ? [listing.photo] : []);
+        photos = saved.length > 1 ? saved.slice() : SITE_PHOTOS.slice();
+      }
+    } else {
+      document.getElementById('page-title').textContent = 'Add New Listing';
+      photos = SITE_PHOTOS.slice();
+    }
+    renderPhotos();
+
+    document.getElementById('edit-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      syncFromDom();
+      const listings = getListings();
+      const data = {
+        id: isNew ? Date.now() : parseInt(listingId, 10),
+        title: document.getElementById('title').value,
+        location: document.getElementById('location').value,
+        price: parseFloat(document.getElementById('price').value),
+        guests: parseInt(document.getElementById('guests').value, 10),
+        bedrooms: parseInt(document.getElementById('bedrooms').value, 10) || 0,
+        desc: document.getElementById('desc').value,
+        photos: photos,
+        photo: photos[0] || ''
+      };
+      if (isNew) listings.push(data);
+      else {
+        const idx = listings.findIndex(l => l.id == listingId);
+        if (idx >= 0) listings[idx] = data;
+        else listings.push(data);
+      }
+      saveListings(listings);
+      const token = (localStorage.getItem('adminToken') || '').trim();
+      if (token) {
+        await fetch('/api/content', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ listings })
+        });
+      }
+      alert(token ? 'Listing published to the site.' : 'Saved on this browser only. Add the host key on the dashboard to publish it for guests.');
+      location.href = 'admin.html';
+    });
+  </script>
+</body>
+</html>
